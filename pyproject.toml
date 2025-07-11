@@ -1,20 +1,23 @@
 [tool.poetry]
-name = "y"
+name = "pytune_llm"
 version = "0.1.0"
 description = "centralize llm's calls and settings"
 authors = ["Gabriel de Fombelle <gabriel.de.fombelle@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12.3"
+python = "^3.12.3"
+
 
 # -- PROD --
 # simple_logger = { git = "https://github.com/gdefombelle/simple_logger.git" }
 # pytune_configuration = { git = "https://github.com/gdefombelle/pytune_configuration.git"}
+# pytune_llm = { git = "https://github.com/gdefombelle/pytune_llm.git"}
 
 # -- DEV --
 simple_logger = { path = "../../packages/simple_logger" }
 pytune_configuration = { path = "../../packages/pytune_configuration"}
+
 
 openai = "^1.82.0"
 httpx = "*"                # Pour les appels réseau (ex: Ollama)
