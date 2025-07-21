@@ -50,7 +50,7 @@ async def call_openai_llm(
         "model": model,
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 1000
+        "max_tokens": 7000
     }
 
     async with httpx.AsyncClient(timeout=20) as client:
