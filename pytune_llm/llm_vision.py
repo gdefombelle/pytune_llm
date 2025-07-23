@@ -1,9 +1,8 @@
 import asyncio
 import json
-from typing import List
 import re
+from typing import List
 from pytune_llm.llm_client import call_llm_vision
-
 
 
 async def label_image_from_url(image_url: str, filename: str = None) -> dict:
@@ -16,6 +15,7 @@ Return a strict JSON object with the following fields:
 - lighting: lighting quality (well-lit, dark, blurry, partial)
 - content: list of visible piano-related objects (e.g. logo, bench, pedals, keys, cover, music stand)
 - notes: freeform notes on clarity or issues (e.g. “logo obscured”, “too close to frame”, etc.)
+- If the image appears to show a serial number (e.g., a sequence of digits engraved or printed inside the piano), mention this in the notes field, e.g. "possible serial number visible".
 
 Respond ONLY with JSON. Do not explain or apologize.
 """.strip()
@@ -34,7 +34,16 @@ Respond ONLY with JSON. Do not explain or apologize.
             raise ValueError("No JSON block found in response")
 
         json_str = match.group(1)
-        return json.loads(json_str)
+        parsed = json.loads(json_str)
+
+        # Ajoute has_serial_number = True si les notes mentionnent un serial
+        notes = parsed.get("notes", "").lower()
+        if "serial number" in notes or "numéro de série" in notes:
+            parsed["has_serial_number"] = True
+        else:
+            parsed["has_serial_number"] = False
+
+        return parsed
 
     except Exception as e:
         return {
@@ -43,10 +52,13 @@ Respond ONLY with JSON. Do not explain or apologize.
             "image_url": image_url
         }
 
+
 async def label_images_from_urls(image_data: List[dict]) -> List[dict]:
     """
     image_data = [{"url": ..., "filename": ...}, ...]
     """
-    tasks = [label_image_from_url(img["url"], img.get("filename", f"photo_{i+1}.jpg"))
-             for i, img in enumerate(image_data)]
+    tasks = [
+        label_image_from_url(img["url"], img.get("filename", f"photo_{i+1}.jpg"))
+        for i, img in enumerate(image_data)
+    ]
     return await asyncio.gather(*tasks)
