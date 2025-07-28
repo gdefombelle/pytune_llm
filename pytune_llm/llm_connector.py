@@ -1,9 +1,16 @@
 # llm_connector.py
+from typing import Optional
 from pytune_llm.settings import get_llm_backend, get_supported_llm_models
 from pytune_llm.llm_backends.openai_backend import call_openai_llm
 from pytune_llm.llm_backends.ollama_backend import call_ollama_llm
+from pytune_llm.task_reporting.reporter import TaskReporter
 
-async def call_llm(prompt: str, context: dict, metadata: dict = None) -> str:
+async def call_llm(
+        prompt: str, 
+        context: dict, 
+        metadata: dict = None,
+        reporter: Optional[TaskReporter] = None) -> str:
+
     metadata = metadata or {}
 
     # 1. Récupérer backend et modèle
@@ -23,10 +30,10 @@ async def call_llm(prompt: str, context: dict, metadata: dict = None) -> str:
 
     # 4. Appel du backend correspondant
     if backend == "openai":
-        return await call_openai_llm(prompt, context)
+        return await call_openai_llm(prompt, context, reporter=reporter)
 
     elif backend == "ollama":
-        return await call_ollama_llm(prompt, context)
+        return await call_ollama_llm(prompt, context, reporter=reporter)
 
     else:
         raise ValueError(f"❌ Unsupported LLM backend: {backend}")

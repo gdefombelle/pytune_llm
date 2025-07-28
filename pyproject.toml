@@ -25,6 +25,7 @@ pyyaml = "*"               # Pour parser les fichiers YAML (politique agent)
 aiofiles = "*"             # Pour l'upload temporaire de fichiers
 python-multipart = "*"     # Pour le support de fichiers dans FastAPI
 ollama = "*"               # Client Python officiel si dispo/stable (optionnel)
+tiktoken = "^0.9.0"
 
 [build-system]
 requires = ["poetry-core"]

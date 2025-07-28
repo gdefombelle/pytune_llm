@@ -1,8 +1,12 @@
 # ollama_backend.py
+from typing import Optional
 import httpx
 from pytune_llm.settings import get_ollama_url, config
+from pytune_llm.task_reporting.reporter import TaskReporter
 
-async def call_ollama_llm(prompt: str, context: dict) -> str:
+async def call_ollama_llm(prompt: str, 
+                          context: dict,
+                          reporter : Optional[TaskReporter]) -> str:
     ollama_url = get_ollama_url()
     model_name = context.get("llm_model") or config.OLLAMA_MODEL or "mistral"
 

@@ -6,13 +6,19 @@ from typing import Optional
 
 from pytune_llm.llm_backends.openai_backend import call_openai_llm
 from pytune_llm.settings import get_llm_backend, get_supported_llm_models
+from pytune_llm.task_reporting.reporter import TaskReporter
 from pytune_configuration.sync_config_singleton import config, SimpleConfig
 
 config = config or SimpleConfig()
 openai.api_key = config.OPEN_AI_PYTUNE_API_KEY
 
 
-async def ask_llm(prompt_template: str, user_input: str, context: dict) -> str:
+async def ask_llm(
+    prompt_template: str, 
+    user_input: str, 
+    context: dict, 
+    reporter: Optional[TaskReporter] = None
+) -> str:
     """
     Envoie une requête au LLM avec un prompt enrichi du contexte utilisateur.
     Le prompt_template provient de la policy YAML (ex: policy.prompt_template).
@@ -21,6 +27,8 @@ async def ask_llm(prompt_template: str, user_input: str, context: dict) -> str:
         user_input=user_input,
         **context
     )
+
+    reporter and await reporter.step("🤖 Asking LLM")
 
     response = await openai.ChatCompletion.acreate(
         model="gpt-4",
@@ -32,7 +40,12 @@ async def ask_llm(prompt_template: str, user_input: str, context: dict) -> str:
     return response.choices[0].message.content.strip()
 
 
-async def call_llm_vision(prompt: str, image_urls: list[str], metadata: Optional[dict] = None) -> dict:
+async def call_llm_vision(
+        prompt: str, 
+        image_urls: list[str], 
+        metadata: Optional[dict] = None,
+        reporter : Optional[TaskReporter] = None) -> dict:
+    
     metadata = metadata or {}
 
     backend = metadata.get("llm_backend") or get_llm_backend()
@@ -65,4 +78,4 @@ async def call_llm_vision(prompt: str, image_urls: list[str], metadata: Optional
         }
     ]
 
-    return await call_openai_llm(messages=messages, model=model, vision=True)
+    return await call_openai_llm(messages=messages, model=model, vision=True, reporter=reporter)
