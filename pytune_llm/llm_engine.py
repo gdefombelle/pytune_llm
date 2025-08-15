@@ -23,7 +23,7 @@ async def call_openai_llm(user_input: str, context: dict, prompt_template: str) 
     }
 
     payload = {
-        "model": "gpt-4",  # or "gpt-3.5-turbo"
+        "model": "gpt-4o-mini",  
         "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": interpolated_prompt}

@@ -34,3 +34,4 @@ def estimate_tokens(messages: list[dict], model_name: str) -> int:
             total += len(encoding.encode(str(value)))
     total += 2  # priming
     return total
+
