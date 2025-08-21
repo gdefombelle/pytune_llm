@@ -1,32 +1,43 @@
 [tool.poetry]
-name = "pytune_llm"
+name = "pytune-llm"                     # ← distribution en kebab-case
 version = "0.1.0"
-description = "centralize llm's calls and settings"
+description = "Centralize LLM calls and settings for PyTune"
 authors = ["Gabriel de Fombelle <gabriel.de.fombelle@gmail.com>"]
+license = "MIT"
 readme = "README.md"
+packages = [{ include = "pytune_llm" }]
 
 [tool.poetry.dependencies]
-python = "^3.12.3"
+python = ">=3.12,<3.13"
 
+# --- Dépendances internes (mode DEV) ---
+# (en PROD, tu bascules avec ton switch_env.py ou tu remplaces par des dep Git/versions)
+simple-logger = { path = "../../packages/simple_logger", develop = true }
+pytune-configuration = { path = "../../packages/pytune_configuration", develop = true }
 
-# -- PROD --
-# simple_logger = { git = "https://github.com/gdefombelle/simple_logger.git" }
-# pytune_configuration = { git = "https://github.com/gdefombelle/pytune_configuration.git"}
-# pytune_llm = { git = "https://github.com/gdefombelle/pytune_llm.git"}
-
-# -- DEV --
-simple_logger = { path = "../../packages/simple_logger" }
-pytune_configuration = { path = "../../packages/pytune_configuration"}
-
-
+# --- LLM / Réseau / Tokenizer ---
 openai = "^1.82.0"
-httpx = "*"                # Pour les appels réseau (ex: Ollama)
-pyyaml = "*"               # Pour parser les fichiers YAML (politique agent)
-aiofiles = "*"             # Pour l'upload temporaire de fichiers
-python-multipart = "*"     # Pour le support de fichiers dans FastAPI
-ollama = "*"               # Client Python officiel si dispo/stable (optionnel)
+httpx = "^0.27.2"                # évite "*", garde une fourche stable
+pyyaml = "^6.0.2"
+aiofiles = "^24.1.0"
+python-multipart = "^0.0.12"
 tiktoken = "^0.9.0"
 
+# --- Provider optionnel local ---
+# rends Ollama optionnel via un extra : pytune-llm[ollama]
+ollama = { version = "^0.3.0", optional = true }
+
+[tool.poetry.extras]
+ollama = ["ollama"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.23.8"
+ruff = "^0.6.8"
+mypy = "^1.11.1"
+black = "^24.8.0"
+isort = "^5.13.2"
+
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"

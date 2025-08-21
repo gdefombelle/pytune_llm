@@ -1,7 +1,23 @@
-# Ignorer les environnements virtuels
-venv/
+# Byte-compiled / cache
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-.env
+*.pyd
+*.so
+*.dylib
+
+# Poetry venv local
+.venv/
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
