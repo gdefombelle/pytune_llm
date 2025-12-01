@@ -1,5 +1,11 @@
+[project]
+name = "pytune_llm"
+version = "0.0.0"
+description = "PyTune LLM utilities"
+requires-python = ">=3.12"
+
 [tool.poetry]
-name = "pytune-llm"                     # ← distribution en kebab-case
+name = "pytune_llm"                     # ← distribution en kebab-case
 version = "0.1.0"
 description = "Centralize LLM calls and settings for PyTune"
 authors = ["Gabriel de Fombelle <gabriel.de.fombelle@gmail.com>"]
@@ -8,12 +14,13 @@ readme = "README.md"
 packages = [{ include = "pytune_llm" }]
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.13"
+python = ">=3.12,<4.0"
 
-# --- Dépendances internes (mode DEV) ---
-# (en PROD, tu bascules avec ton switch_env.py ou tu remplaces par des dep Git/versions)
-simple-logger = { path = "../../packages/simple_logger", develop = true }
-pytune-configuration = { path = "../../packages/pytune_configuration", develop = true }
+# --- Dépendances internes (modes DEV + PROD) ---
+
+pytune_configuration = { git = "https://github.com/gdefombelle/pytune_configuration.git", branch = "main"}
+simple_logger = { git = "https://github.com/gdefombelle/simple_logger.git", branch = "main"}
+
 
 # --- LLM / Réseau / Tokenizer ---
 openai = "^1.82.0"
