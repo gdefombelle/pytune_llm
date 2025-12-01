@@ -2,7 +2,7 @@
 name = "pytune_llm"
 version = "0.0.0"
 description = "PyTune LLM utilities"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 
 [tool.poetry]
 name = "pytune_llm"                     # ← distribution en kebab-case
@@ -14,7 +14,7 @@ readme = "README.md"
 packages = [{ include = "pytune_llm" }]
 
 [tool.poetry.dependencies]
-python = ">=3.12,<4.0"
+python = ">=3.12,<3.13"
 
 # --- Dépendances internes (modes DEV + PROD) ---
 
