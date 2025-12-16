@@ -11,6 +11,7 @@ from pytune_configuration.sync_config_singleton import config, SimpleConfig
 
 config = config or SimpleConfig()
 openai.api_key = config.OPEN_AI_PYTUNE_API_KEY
+LLM_VISION_MODEL = getattr(config, "LLM_VISION_MODEL", "gpt-5-mini")
 
 
 async def ask_llm(
@@ -49,7 +50,7 @@ async def call_llm_vision(
     metadata = metadata or {}
 
     backend = metadata.get("llm_backend") or get_llm_backend()
-    model = metadata.get("llm_model") or "gpt-4o"
+    model = metadata.get("llm_model") or LLM_VISION_MODEL
 
     if backend != "openai":
         raise NotImplementedError("Only OpenAI backend supports vision for now.")

@@ -2,6 +2,10 @@
 from pytune_llm.settings import get_llm_backend, get_openai_key
 import httpx
 from string import Template
+from pytune_configuration.sync_config_singleton import config, SimpleConfig
+
+config = config or SimpleConfig()
+LLM_DEFAULT_MODEL = getattr(config, "LLM_DEFAULT_MODEL", "gpt-5-mini")
 
 async def call_llm(user_input: str, context: dict, prompt_template: str) -> str:
     backend = get_llm_backend()
@@ -23,7 +27,7 @@ async def call_openai_llm(user_input: str, context: dict, prompt_template: str) 
     }
 
     payload = {
-        "model": "gpt-4o-mini",  
+        "model": LLM_DEFAULT_MODEL,  
         "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": interpolated_prompt}

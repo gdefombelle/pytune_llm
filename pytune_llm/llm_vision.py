@@ -24,7 +24,6 @@ Respond ONLY with JSON. Do not explain or apologize.
         response = await call_llm_vision(
             prompt=prompt,
             image_urls=[image_url],
-            metadata={"llm_model": "gpt-4o"}
         )
 
         content = response["choices"][0]["message"]["content"]

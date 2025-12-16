@@ -5,6 +5,12 @@ import httpx
 from pytune_llm.llm_utils import estimate_tokens
 from pytune_llm.settings import get_openai_key
 from pytune_llm.task_reporting.reporter import TaskReporter
+from pytune_configuration.sync_config_singleton import config, SimpleConfig
+
+config = config or SimpleConfig()
+LLM_DEFAULT_MODEL = getattr(config, "LLM_DEFAULT_MODEL", "gpt-5-mini")
+LLM_MAX_OUTPUT_TOKENS_TEXT = int(getattr(config, "LLM_MAX_OUTPUT_TOKENS_TEXT", "1024"))
+LLM_MAX_OUTPUT_TOKENS_VISION = int(getattr(config, "LLM_MAX_OUTPUT_TOKENS_VISION", "2048"))
 
 VALID_ROLES = {"system", "user", "assistant"}
 def sanitize_messages(messages: list[dict]) -> list[dict]:
@@ -28,7 +34,7 @@ async def call_openai_llm(
     prompt: str = None,
     context: dict = None,
     messages: list[dict] = None,
-    model: str = "gpt-3.5-turbo",
+    model: str = LLM_DEFAULT_MODEL,
     vision: bool = False,
     reporter: Optional[TaskReporter]= None
 ) -> dict | str:
@@ -51,10 +57,10 @@ async def call_openai_llm(
     messages = sanitize_messages(messages)
     # ✅ Token-aware adjustment
     if vision:
-        max_tokens = 4096 * 2  # GPT-4o accepte jusqu’à ~128k selon version
+        max_tokens = LLM_MAX_OUTPUT_TOKENS_VISION
     else:
         total_prompt_tokens = estimate_tokens(messages, model)
-        max_tokens = max(256, 4096 - total_prompt_tokens)
+        max_tokens = max(256, LLM_MAX_OUTPUT_TOKENS_TEXT - total_prompt_tokens)
         print(f"📏 Prompt tokens: {total_prompt_tokens} | max_tokens set to: {max_tokens}")
 
     payload = {
@@ -66,7 +72,7 @@ async def call_openai_llm(
     
 
     reporter and await reporter.step(f"📡 Calling OpenAI API ({model})")
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         print(json.dumps(payload, indent=2))
 
         response = await client.post(
