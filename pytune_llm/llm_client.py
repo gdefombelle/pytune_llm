@@ -29,7 +29,7 @@ async def ask_llm(
         **context
     )
 
-    reporter and await reporter.step("🤖 Asking LLM")
+    reporter and await reporter.step("🤖 Asking LLM") # type: ignore
 
     response = await openai.ChatCompletion.acreate(
         model="gpt-4",
