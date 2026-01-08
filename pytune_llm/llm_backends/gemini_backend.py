@@ -2,6 +2,9 @@
 import json
 from typing import Optional, Tuple
 import httpx
+import asyncio
+import random
+from httpx import HTTPStatusError
 
 # On suppose que vous créerez cette fonction dans vos settings
 # from pytune_llm.settings import get_gemini_key 
@@ -96,70 +99,116 @@ def extract_text_from_gemini_response(json_data: dict) -> str:
 # ────────────────────────────────────────────────────────────────
 # Main call
 # ────────────────────────────────────────────────────────────────
-
 async def call_gemini_llm(
     prompt: str | None = None,
-    context: dict | None = None, # Réservé pour usage futur
+    context: dict | None = None,  # réservé usage futur
     messages: list[dict] | None = None,
-    model: str = GEMINI_DEFAULT_MODEL,
-    json_mode: bool = False, # Ajout utile pour l'extraction de données
+    model: str | None = None, 
+    json_mode: bool = False,
     reporter: Optional[TaskReporter] = None,
 ) -> str:
-    
-    # Récupération de la clé (à adapter selon votre gestion de config)
-    # api_key = get_gemini_key() 
-    # Pour l'exemple, on suppose qu'elle est dans l'environnement ou config
-    api_key = getattr(config, "GEMINI_API_KEY", "") 
+    if model is None:
+        model = GEMINI_DEFAULT_MODEL
+    api_key = getattr(config, "GEMINI_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
 
     if not messages:
         if not prompt:
             raise ValueError("You must provide either 'messages' or 'prompt'")
-        messages = [
-            {"role": "user", "content": prompt},
-        ]
+        messages = [{"role": "user", "content": prompt}]
 
-    # Préparation du payload
+    # Payload Gemini
     contents, system_instruction = format_gemini_messages(messages)
-    
+
     generation_config = {
         "temperature": 0.0,
         "maxOutputTokens": GEMINI_MAX_OUTPUT_TOKENS,
     }
 
-    # Activation du mode JSON strict si demandé (très puissant sur Gemini Flash)
     if json_mode:
         generation_config["responseMimeType"] = "application/json"
 
     payload = {
         "contents": contents,
-        "generationConfig": generation_config
+        "generationConfig": generation_config,
     }
 
     if system_instruction:
         payload["systemInstruction"] = system_instruction
 
-    # URL de l'API REST Google (v1beta est souvent requise pour les derniers modèles)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{model}:generateContent"
+    )
 
     reporter and await reporter.step(f"⚡ Calling Gemini API ({model})") # type: ignore
 
+    max_retries = 2
+
     async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            url,
-            headers={
-                "x-goog-api-key": api_key,
-                "Content-Type": "application/json"
-            },
-            json=payload,
-        )
+        for attempt in range(max_retries + 1):
+            try:
+                response = await client.post(
+                    url,
+                    headers={
+                        "x-goog-api-key": api_key,
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
 
-        if response.status_code >= 400:
-            print("❌ GEMINI STATUS:", response.status_code)
-            print("❌ GEMINI BODY:", response.text)
-            response.raise_for_status()
+                if response.status_code == 429:
+                    raise HTTPStatusError(
+                        "Gemini rate limited",
+                        request=response.request,
+                        response=response,
+                    )
 
-        json_data = response.json()
+                if response.status_code >= 400:
+                    print("❌ GEMINI STATUS:", response.status_code)
+                    print("❌ GEMINI BODY:", response.text)
+                    response.raise_for_status()
 
-    reporter and await reporter.step("✅ Received Gemini response") # type: ignore
+                try:
+                    json_data = response.json()
+                except json.JSONDecodeError:
+                    print("❌ GEMINI invalid JSON response:")
+                    print(response.text[:500])
+                    raise HTTPStatusError(
+                        "Gemini returned invalid JSON",
+                        request=response.request,
+                        response=response,
+                    )
+                reporter and await reporter.step("✅ Received Gemini response") # type: ignore
+                return extract_text_from_gemini_response(json_data)
 
-    return extract_text_from_gemini_response(json_data)
+            except HTTPStatusError as e:
+                if e.response is None or e.response.status_code != 429:
+                    raise
+
+                if attempt >= max_retries:
+                    break
+
+                # Exponential backoff + jitter (Google compliant)
+                delay = random.uniform(
+                    0.4 if attempt == 0 else 1.5,
+                    0.6 if attempt == 0 else 2.5,
+                )
+
+                print(
+                    f"⚠️ Gemini 429 – retry {attempt + 1}/{max_retries} "
+                    f"in {delay:.2f}s"
+                )
+
+                await asyncio.sleep(delay)
+
+    # Fallback UX — JAMAIS lever d'erreur ici
+    reporter and await reporter.step(
+        "⚠️ Gemini unavailable – fallback response"
+    ) # type: ignore
+
+    return (
+        "⏳ Les serveurs IA sont temporairement saturés. "
+        "On continue sans calcul avancé pour cette étape."
+    )

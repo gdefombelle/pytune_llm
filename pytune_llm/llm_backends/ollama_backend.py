@@ -6,7 +6,8 @@ from pytune_llm.task_reporting.reporter import TaskReporter
 
 async def call_ollama_llm(prompt: str, 
                           context: dict,
-                          reporter : Optional[TaskReporter]) -> str:
+                          model:  str | None = None, 
+                          reporter : Optional[TaskReporter] = None) -> str:
     ollama_url = get_ollama_url()
     model_name = context.get("llm_model") or config.OLLAMA_MODEL or "mistral"
 

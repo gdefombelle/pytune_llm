@@ -26,7 +26,7 @@ def estimate_tokens(messages: list[dict], model_name: str) -> int:
     try:
         encoding = encoding_for_model(model_name)
     except KeyError:
-        encoding = encoding_for_model("gpt-3.5-turbo")  # fallback
+        encoding = encoding_for_model("gpt-5-mini")  # fallback
     total = 0
     for message in messages:
         total += 4  # per-message overhead

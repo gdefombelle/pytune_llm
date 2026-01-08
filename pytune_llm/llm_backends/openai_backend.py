@@ -103,10 +103,13 @@ async def call_openai_llm(
     prompt: str | None = None,
     context: dict | None = None,
     messages: list[dict] | None = None,
-    model: str = LLM_DEFAULT_MODEL,
+    model: str | None = None, 
     vision: bool = False,
     reporter: Optional[TaskReporter] = None,
 ) -> str:
+    
+    if model is None:
+        model = LLM_DEFAULT_MODEL
 
     api_key = get_openai_key()
     reasoning_enabled = model.startswith("gpt-5")
