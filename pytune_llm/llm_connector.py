@@ -3,6 +3,7 @@ from typing import Optional, Dict
 
 from pytune_llm.llm_backends.cerebras_backend import call_cerebras_llm
 from pytune_llm.llm_backends.gemini_backend import call_gemini_llm
+from pytune_llm.llm_backends.moonshot_backend import call_moonshot_llm
 from pytune_llm.llm_backends.openai_backend import call_openai_llm
 from pytune_llm.llm_backends.ollama_backend import call_ollama_llm
 
@@ -73,5 +74,12 @@ async def call_llm(
             model=resolved_model,
             reporter=reporter,
         )
+    if backend == "moonshot":
+            return await call_moonshot_llm(
+                prompt=prompt,
+                context=context,
+                model=resolved_model,
+                reporter=reporter,
+            )
 
     raise ValueError(f"❌ Unsupported LLM backend: {backend}")
