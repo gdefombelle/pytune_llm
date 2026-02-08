@@ -100,7 +100,7 @@ async def call_cerebras_llm(
     def _run():
         client = Cerebras(api_key=api_key)
         return client.chat.completions.create(
-            model=model,
+            model=model, # type: ignore
             messages=messages,
             max_tokens=CEREBRAS_MAX_TOKENS,
             temperature=CEREBRAS_TEMPERATURE,
