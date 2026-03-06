@@ -3,12 +3,14 @@ import json
 import base64
 import asyncio
 import random
+from urllib.parse import urlparse
 import httpx
+from pytune_data import minio_client
 import requests
 import mimetypes 
 from typing import Optional, Tuple, Union
 from httpx import HTTPStatusError
-
+import os
 from pytune_llm.task_reporting.reporter import TaskReporter
 from pytune_configuration.sync_config_singleton import config, SimpleConfig
 
@@ -30,18 +32,49 @@ GEMINI_MAX_OUTPUT_TOKENS = int(
 # ────────────────────────────────────────────────────────────────
 # Utils
 # ────────────────────────────────────────────────────────────────
-
 def encode_image(image_path_or_bytes: Union[str, bytes]) -> str:
-    """Encode une image OU un fichier audio en Base64."""
+    """
+    Encode image or audio into Base64.
+
+    - bytes → direct encode
+    - MinIO URL → use MinIO SDK
+    - External URL → requests
+    - Local file path → open()
+    """
+
+    # 1️⃣ Already bytes
+    if isinstance(image_path_or_bytes, bytes):
+        return base64.b64encode(image_path_or_bytes).decode("utf-8")
+
     if isinstance(image_path_or_bytes, str):
+
+        # 2️⃣ HTTP case
         if image_path_or_bytes.startswith("http"):
-            resp = requests.get(image_path_or_bytes, timeout=10)
-            resp.raise_for_status()
-            return base64.b64encode(resp.content).decode("utf-8")
-        else:
-            with open(image_path_or_bytes, "rb") as f:
-                return base64.b64encode(f.read()).decode("utf-8")
-    return base64.b64encode(image_path_or_bytes).decode("utf-8")
+            parsed = urlparse(image_path_or_bytes)
+
+            public_minio_host = "minio.pytune.com"
+            env_endpoint = os.getenv("MINIO_ENDPOINT", "minio:9000")
+
+            if public_minio_host in parsed.netloc:
+                # 🔁 Force internal routing
+                internal_url = f"http://{env_endpoint}{parsed.path}"
+                print("🔁 Rewriting MinIO URL →", internal_url)
+                resp = requests.get(internal_url, timeout=10)
+                resp.raise_for_status()
+                content = resp.content
+            else:
+                print("🌍 External URL →", image_path_or_bytes)
+                resp = requests.get(image_path_or_bytes, timeout=10)
+                resp.raise_for_status()
+                content = resp.content
+
+            return base64.b64encode(content).decode("utf-8")
+        # 3️⃣ Local file
+        with open(image_path_or_bytes, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+
+    raise ValueError("Unsupported image input type")
+
 
 def format_gemini_messages(messages: list[dict]) -> Tuple[list[dict], dict | None]:
     """Convertit les messages (Texte, Image, Audio) pour l'API Gemini."""
